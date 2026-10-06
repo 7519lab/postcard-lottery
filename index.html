@@ -459,10 +459,11 @@ async function reveal(){
 
 /* ---------- 把小卡畫成圖片下載 ---------- */
 function wrap(ctx, text, maxW){
+  const NO_START=/[。，、！？：；」』）】〕》〉…～,.!?;:)\]]/;
   const lines=[]; let line="";
   for(const ch of text){
     const t=line+ch;
-    if(ctx.measureText(t).width>maxW && line){ lines.push(line); line=ch; } else line=t;
+    if(ctx.measureText(t).width>maxW && line && !NO_START.test(ch)){ lines.push(line); line=ch; } else line=t;
   }
   if(line) lines.push(line); return lines;
 }
@@ -504,9 +505,9 @@ async function renderCard(p){
   const by=H-250;
   x.fillStyle="#F2E8D5"; x.font='400 32px "Noto Serif TC"'; x.fillText("給 "+p.name,PAD,by);
   x.fillStyle="#7FB09A"; x.font="600 34px Fraunces"; x.fillText(t[0],PAD,by+56);
-  x.fillStyle="#B9C3D9"; x.font='400 26px "Noto Serif TC"'; x.fillText(t[1],PAD,by+100);
+  x.fillStyle="#B9C3D9"; x.font='400 24px "Noto Serif TC"'; let dy=by+96; for(const l of wrap(x,t[1],520)){ x.fillText(l,PAD,dy); dy+=32; }
   x.fillStyle="#8A96B3"; x.font="500 22px Fraunces"; x.letterSpacing="4px"; x.textAlign="right";
-  x.fillText("EUROPEAN POSTCARD LOTTERY",W-PAD,by+56); x.fillText("WINTER 2026–2027 · NORWAY → EUROPE → TAIWAN",W-PAD,by+100); x.textAlign="left"; x.letterSpacing="0px";
+  x.fillText("EUROPEAN POSTCARD LOTTERY",W-PAD,by+40); x.fillText("WINTER 2026–2027",W-PAD,by+76); x.fillText("NORWAY → EUROPE → TAIWAN",W-PAD,by+112); x.textAlign="left"; x.letterSpacing="0px";
   return new Promise(r=>c.toBlob(r,"image/png"));
 }
 async function downloadCard(){
