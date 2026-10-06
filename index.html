@@ -216,7 +216,7 @@ input:focus{outline:none;border-bottom-color:var(--red)}
         <label>你是哪一群的朋友？</label>
         <div style="display:flex;gap:8px;margin-bottom:6px">
           <button class="btn quiet" style="margin:0;flex:1" onclick="setGroup('ld',this)">卿卿我我圈 💕</button>
-          <button class="btn quiet" style="margin:0;flex:1" onclick="setGroup('irl',this)">現實朋友 🏠</button>
+          <button class="btn quiet" style="margin:0;flex:1" onclick="setGroup('irl',this)">Grace 的朋朋 🏠</button>
         </div>
       </div>
       <p class="hint" id="grp-tag" style="margin-bottom:4px"></p>
@@ -326,13 +326,14 @@ async function loadStatic(){
 const ready=loadStatic();
 
 /* ---------- 兩群人：ld = 卿卿我我圈（抽 10），irl = 現實朋友（抽 5） ---------- */
-const GROUPS={ld:{label:"卿卿我我圈 💕",n:10},irl:{label:"現實朋友 🏠",n:5}};
+const GROUPS={ld:{label:"卿卿我我圈 💕",n:10,ex:"絲絲"},irl:{label:"Grace 的朋朋 🏠",n:5,ex:"小雀"}};
 let GROUP=new URLSearchParams(location.search).get("g");
 if(!GROUPS[GROUP]) GROUP=null;
 function setGroup(g,btn){ GROUP=g; document.querySelectorAll("#grp-pick .btn").forEach(b=>b.style.background="transparent"); btn.style.background="var(--paper-2)"; paintGroup(); }
 function paintGroup(){
   document.getElementById("grp-pick").style.display=GROUP?"none":"block";
   document.getElementById("grp-tag").textContent=GROUP?("這是「"+GROUPS[GROUP].label+"」的連結，會抽 "+GROUPS[GROUP].n+" 張。"):"";
+  document.getElementById("nick").placeholder="例如："+(GROUP?GROUPS[GROUP].ex:"小雀");
 }
 document.addEventListener("DOMContentLoaded",paintGroup);
 function drawnFor(g){ return g==="ld"?!!PUB.drawnLd:!!PUB.drawnIrl; }

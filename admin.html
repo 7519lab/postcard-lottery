@@ -76,7 +76,7 @@ small{color:var(--soft)}
       <h2>網站狀態</h2>
       <label><input type="checkbox" id="cfg-closed" style="width:auto"> 關閉登記（12/18 抽籤前關）</label><br>
       <label><input type="checkbox" id="cfg-drawnLd" style="width:auto"> 卿卿我我圈已抽完（勾了那群才看得到結果）</label><br>
-      <label><input type="checkbox" id="cfg-drawnIrl" style="width:auto"> 現實朋友已抽完</label><br><br>
+      <label><input type="checkbox" id="cfg-drawnIrl" style="width:auto"> Grace 的朋朋已抽完</label><br><br>
       <button onclick="saveCfg()">儲存</button>
       <p class="msg" id="cfg-msg"></p>
     </div>
@@ -94,8 +94,8 @@ small{color:var(--soft)}
   <div class="view" id="t-draw">
     <div class="card">
       <h2>抽籤</h2>
-      <small>卿卿我我圈抽 10 位，拿 EUROPE-01～10；現實朋友抽 5 位，拿 EUROPE-11～15。各自抽、各自公布。抽過就不能再抽，除非先清除。</small><br><br>
-      <div class="row" style="flex-wrap:wrap"><button onclick="draw('ld')">抽卿卿我我圈 💕</button><button onclick="draw('irl')">抽現實朋友 🏠</button></div>
+      <small>卿卿我我圈抽 10 位，拿 EUROPE-01～10；Grace 的朋朋抽 5 位，拿 EUROPE-11～15。各自抽、各自公布。抽過就不能再抽，除非先清除。</small><br><br>
+      <div class="row" style="flex-wrap:wrap"><button onclick="draw('ld')">抽卿卿我我圈 💕</button><button onclick="draw('irl')">抽Grace 的朋朋 🏠</button></div>
       <div class="row" style="margin-top:8px;flex-wrap:wrap"><button class="q" onclick="clearDraw('ld')">清除 💕</button><button class="q" onclick="clearDraw('irl')">清除 🏠</button></div>
       <p class="msg" id="draw-msg"></p>
       <table id="draw-result"></table>
@@ -190,7 +190,7 @@ async function delPerson(n){ if(!confirm("刪掉 "+n+"？")) return; await db.co
 function esc(s){ return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
 
 /* ---------- draw ---------- */
-const G={ld:{n:10,from:1,flag:"drawnLd",label:"卿卿我我圈"},irl:{n:5,from:11,flag:"drawnIrl",label:"現實朋友"}};
+const G={ld:{n:10,from:1,flag:"drawnLd",label:"卿卿我我圈"},irl:{n:5,from:11,flag:"drawnIrl",label:"Grace 的朋朋"}};
 async function draw(g){
   const cfg=G[g]; await loadPeople();
   const pool=PEOPLE.filter(p=>p.group===g);
