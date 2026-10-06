@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>絲的 European Postcard Lottery · Winter 2026–2027</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700;1,9..144,400&family=Noto+Serif+TC:wght@400;600&family=Caveat:wght@500;600&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+<style>
+:root{
+  --paper:#F2E8D5; --paper-2:#E9DCC4; --ink:#1C2740; --ink-soft:#4B5468;
+  --red:#A9322B; --pine:#2F5D4A; --gold:#C49A3F; --line:#CDBFA3;
+  --night:#101A2E;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){ :root:not([data-theme="light"]){ --paper:#F2E8D5; } }
+:root[data-theme="dark"]{ --paper:#F2E8D5; }
+html{scroll-padding-top:env(safe-area-inset-top,0px);height:100%}
+*,*::before,*::after{box-sizing:inherit;margin:0;padding:0}
+body{
+  min-height:100%; background:var(--night); color:var(--ink);
+  font-family:"Noto Serif TC","Fraunces",Georgia,serif;
+  line-height:1.7; -webkit-font-smoothing:antialiased; overflow-x:hidden;
+}
+.en{font-family:"Fraunces",Georgia,serif}
+.hand{font-family:"Caveat","Noto Serif TC",serif}
+
+/* flags (Windows 沒有國旗 emoji，用 SVG) */
+.fl{display:inline-block;width:1.25em;height:.9em;vertical-align:-.1em;border-radius:2px;background-size:cover;box-shadow:0 0 0 1px rgba(0,0,0,.12)}
+.fl-no{background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 22 16'><rect width='22' height='16' fill='%23BA0C2F'/><rect x='6' width='4' height='16' fill='%23fff'/><rect y='6' width='22' height='4' fill='%23fff'/><rect x='7' width='2' height='16' fill='%2300205B'/><rect y='7' width='22' height='2' fill='%2300205B'/></svg>")}
+.fl-eu{background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 22 16'><rect width='22' height='16' fill='%23003399'/><g fill='%23FFCC00'><circle cx='11' cy='3' r='.8'/><circle cx='11' cy='13' r='.8'/><circle cx='6' cy='8' r='.8'/><circle cx='16' cy='8' r='.8'/><circle cx='7.5' cy='4.5' r='.8'/><circle cx='14.5' cy='4.5' r='.8'/><circle cx='7.5' cy='11.5' r='.8'/><circle cx='14.5' cy='11.5' r='.8'/><circle cx='8.4' cy='3.3' r='.6'/><circle cx='13.6' cy='3.3' r='.6'/><circle cx='8.4' cy='12.7' r='.6'/><circle cx='13.6' cy='12.7' r='.6'/></g></svg>")}
+.fl-tw{background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 22 16'><rect width='22' height='16' fill='%23FE0000'/><rect width='11' height='8' fill='%23000095'/><circle cx='5.5' cy='4' r='2.6' fill='%23fff'/><circle cx='5.5' cy='4' r='1.6' fill='%23000095'/><circle cx='5.5' cy='4' r='1.2' fill='%23fff'/></svg>")}
+/* snow */
+#snow{position:fixed;inset:0;pointer-events:none;z-index:0}
+@media (prefers-reduced-motion:reduce){#snow{display:none}}
+
+/* stage */
+.stage{position:relative;z-index:1;max-width:520px;margin:0 auto;padding:28px 18px 56px}
+.view{display:none}
+.view.on{display:block}
+
+/* knit band (Norwegian pattern) */
+.knit{
+  height:14px; width:100%;
+  background:
+   radial-gradient(circle at 50% 50%,var(--paper) 0 2px,transparent 2.5px) 0 0/14px 14px,
+   repeating-linear-gradient(90deg,var(--red) 0 7px,var(--paper) 7px 14px);
+  opacity:.9;
+}
+.knit.pine{background:
+   radial-gradient(circle at 50% 50%,var(--paper) 0 2px,transparent 2.5px) 0 0/14px 14px,
+   repeating-linear-gradient(90deg,var(--pine) 0 7px,var(--paper) 7px 14px)}
+
+/* postcard */
+.card{
+  position:relative; background:var(--paper); border-radius:6px;
+  box-shadow:0 18px 50px rgba(0,0,0,.45),0 2px 0 rgba(255,255,255,.25) inset;
+  overflow:hidden;
+}
+.card::after{ /* paper grain */
+  content:""; position:absolute; inset:0; pointer-events:none; opacity:.35;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.25 0 0 0 0 0.2 0 0 0 0 0.1 0 0 0 .18 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+}
+.card-in{position:relative;z-index:1;padding:26px 24px 28px}
+
+.stamp{
+  position:absolute; top:22px; right:20px; width:64px; height:80px;
+  background:var(--paper-2); border:2px dashed var(--line); border-radius:3px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  color:var(--pine); transform:rotate(4deg); z-index:2;
+}
+.stamp .big{font-size:30px;line-height:1}
+.stamp .sm{font-size:9px;letter-spacing:.08em;margin-top:4px;color:var(--ink-soft);font-family:"Fraunces",serif}
+.postmark{
+  position:absolute; top:34px; right:58px; width:92px; height:92px; z-index:3;
+  border:2px solid rgba(169,50,43,.55); border-radius:50%;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  font-family:"Fraunces",serif; font-size:9px; letter-spacing:.12em; color:rgba(169,50,43,.75);
+  transform:rotate(-12deg); text-align:center; line-height:1.3;
+  mix-blend-mode:multiply;
+}
+.postmark b{font-size:13px;display:block;margin:2px 0}
+
+h1{font-family:"Fraunces",serif;font-weight:700;font-size:clamp(30px,8.5vw,42px);line-height:1.05;letter-spacing:-.01em;color:var(--ink);font-variation-settings:"opsz" 144}
+h1 em{font-style:italic;font-weight:400}
+h2{font-family:"Fraunces",serif;font-weight:600;font-size:24px;line-height:1.2;margin-bottom:14px}
+.route{margin-top:18px;font-family:"Fraunces",serif;font-size:15px;color:var(--ink-soft);display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.route span{font-size:20px}
+.sub{margin-top:22px;font-size:17px;color:var(--ink);line-height:1.6}
+.sub.en{font-size:19px;line-height:1.45;font-style:italic;font-weight:400}
+.season{margin-top:6px;font-family:"Caveat","Noto Serif TC",serif;font-size:22px;color:var(--red);}
+
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:10px;
+  width:100%; margin-top:26px; padding:16px 20px; border:0; border-radius:4px;
+  background:var(--red); color:var(--paper); font:600 17px/1 "Fraunces","Noto Serif TC",serif;
+  letter-spacing:.02em; cursor:pointer; box-shadow:0 6px 0 #7E241F;
+  transition:transform .08s ease, box-shadow .08s ease;
+}
+.btn:active{transform:translateY(4px);box-shadow:0 2px 0 #7E241F}
+.btn:focus-visible{outline:3px solid var(--gold);outline-offset:3px}
+.btn.quiet{background:transparent;color:var(--ink);box-shadow:none;border:1.5px solid var(--ink);margin-top:12px}
+.btn.quiet:active{transform:none}
+
+/* story */
+.story p{font-size:17px;margin-bottom:14px;color:var(--ink)}
+.story p.en{font-style:italic;font-size:18px;line-height:1.5;color:var(--ink-soft)}
+.story .last{font-family:"Caveat","Noto Serif TC",serif;font-size:30px;color:var(--red);margin-top:18px}
+.story .tc{color:var(--ink-soft);font-size:15px;margin-top:22px;border-top:1px solid var(--line);padding-top:16px}
+
+/* form */
+label{display:block;font-size:14px;color:var(--ink-soft);margin:18px 0 6px}
+input{
+  width:100%; padding:14px 12px; font:18px "Noto Serif TC",serif; color:var(--ink);
+  background:transparent; border:0; border-bottom:2px solid var(--ink); border-radius:0;
+}
+input::placeholder{color:#A99C84;font-family:"Caveat","Noto Serif TC",serif;font-size:22px}
+input:focus{outline:none;border-bottom-color:var(--red)}
+.hint{font-size:13px;color:var(--ink-soft);margin-top:8px}
+.err{color:var(--red);font-size:14px;margin-top:8px;min-height:1.4em}
+
+/* result */
+.ticket{
+  margin:18px 0 0; border:2px dashed var(--line); border-radius:6px; padding:18px 16px;
+  background:var(--paper-2);
+}
+.ticket .k{font-family:"Fraunces",serif;font-size:12px;letter-spacing:.14em;color:var(--ink-soft)}
+.ticket .v{font-family:"Fraunces",serif;font-size:26px;font-weight:600;margin:2px 0 12px}
+.ticket .v.hand{font-family:"Caveat","Noto Serif TC",serif;font-size:30px;font-weight:600;color:var(--red)}
+.bless{
+  margin-top:20px;padding:20px 18px 18px;background:var(--night);color:var(--paper);border-radius:6px;position:relative;
+}
+.bless .k{font-family:"Fraunces",serif;font-size:12px;letter-spacing:.14em;color:#B9C3D9}
+.bless .w{font-family:"Fraunces",serif;font-style:italic;font-size:40px;line-height:1;margin-top:10px;letter-spacing:-.01em;font-variation-settings:"opsz" 144}
+.bless .o{font-family:"Fraunces",serif;font-size:12px;letter-spacing:.14em;color:#B9C3D9;margin-top:6px}
+.bless .m{font-size:15px;color:#E6DCC8;margin-top:10px;line-height:1.6}
+.bless .t{font-family:"Caveat","Noto Serif TC",serif;font-size:26px;line-height:1.3;margin-top:14px;padding-top:12px;border-top:1px solid rgba(242,232,213,.25)}
+.bless .sig{text-align:right;font-family:"Caveat","Noto Serif TC",serif;font-size:20px;color:#B9C3D9;margin-top:10px}
+.bless .star{position:absolute;top:10px;right:14px;font-size:22px;color:var(--gold)}
+.title-chip{margin-top:16px;font-size:15px}
+.title-chip b{font-family:"Fraunces",serif;color:var(--pine);font-size:17px}
+.foot{margin-top:22px;font-size:14px;color:var(--ink-soft);line-height:1.7}
+.foot .hand{font-size:21px;color:var(--ink)}
+
+/* winner */
+.win{margin-top:18px;border:2px solid var(--red);border-radius:6px;padding:18px 16px;background:#F7EEE0}
+.win .k{font-family:"Fraunces",serif;font-size:12px;letter-spacing:.14em;color:var(--red)}
+.win .id{font-family:"Fraunces",serif;font-size:38px;font-weight:700;letter-spacing:.04em;margin:4px 0 10px;color:var(--ink)}
+.win .st{font-size:16px}
+.reveal{margin-top:16px;padding:16px;background:var(--night);color:var(--paper);border-radius:6px}
+.reveal .city{font-family:"Fraunces",serif;font-size:30px;font-weight:600;margin:6px 0}
+.reveal .m{font-family:"Caveat","Noto Serif TC",serif;font-size:24px;margin-top:10px;border-top:1px solid rgba(242,232,213,.25);padding-top:10px}
+.muted{color:var(--ink-soft);font-size:14px}
+.loading{text-align:center;color:#8A96B3;font-family:"Fraunces",serif;padding:30px 0}
+/* footer */
+.meta{margin-top:28px;text-align:center;color:#8A96B3;font-family:"Fraunces",serif;font-size:12px;letter-spacing:.12em}
+</style>
+</head>
+<body>
+<canvas id="snow" aria-hidden="true"></canvas>
+
+<main class="stage">
+
+<!-- ========== 01 LANDING ========== -->
+<section class="view on" id="v-landing">
+  <div class="card">
+    <div class="knit"></div>
+    <div class="stamp" aria-hidden="true"><div class="big">🎄</div><div class="sm">NORGE · 32 kr</div></div>
+    <div class="postmark" aria-hidden="true">BERGEN<b>18.12.2026</b>NORGE</div>
+    <div class="card-in">
+      <div class="season hand">God jul fra Norge ❄</div>
+      <h1 style="margin-top:8px">European<br>Postcard<br><em>Lottery</em></h1>
+      <div class="route"><span class="fl fl-no"></span>→<span class="fl fl-eu"></span>→<span class="fl fl-tw"></span> Winter 2026–2027</div>
+      <p class="sub en">15 postcards.<br>Many cities.<br>One very long winter journey.</p>
+      <p class="sub">你不能選城市，也不能選明信片。<br>你只知道，它會從歐洲的某個地方出發。</p>
+      <button class="btn" onclick="go('story')">Enter the journey ✈</button>
+    </div>
+    <div class="knit pine"></div>
+  </div>
+  <p class="meta">A GAME BY 絲 · SENT WITH LOVE FROM BERGEN</p>
+</section>
+
+<!-- ========== 02 STORY ========== -->
+<section class="view" id="v-story">
+  <div class="card">
+    <div class="knit"></div>
+    <div class="card-in story">
+      <h2>On December 18,<br>my semester in Norway ends.</h2>
+      <p class="en">Then I have one month.</p>
+      <p class="en">One month to travel. To get lost. To eat too much. To take too many photos. And probably spend too much money.</p>
+      <p class="en">Somewhere along the way, I will send 15 postcards back to Taiwan.</p>
+      <p class="en">Maybe from Norway. Maybe from Denmark. Maybe from France. Maybe somewhere completely unexpected.</p>
+      <p class="en">You won't know until it arrives.</p>
+      <p class="last">Maybe one of them is yours.</p>
+      <p class="tc">12/18 期末結束，隔天我就上路了。這一個月裡，我會從路上的某個城市，寄 15 張明信片回台灣。每一張都是我親自挑、親自寫、親自投進郵筒的。<br><br>沒抽到的人也別難過，你會收到我寫給你的祝福小語、一張線上明信片，而且如果我們有見面，說不定還有從挪威帶回來的小東西喔。</p>
+      <button class="btn" onclick="go('register')">我要參加 🎟</button>
+      <button class="btn quiet" onclick="go('landing')">回上一頁</button>
+    </div>
+    <div class="knit pine"></div>
+  </div>
+</section>
+
+<!-- ========== 03 REGISTER ========== -->
+<section class="view" id="v-register">
+  <div class="card">
+    <div class="knit"></div>
+    <div class="stamp" aria-hidden="true"><div class="big">📮</div><div class="sm">TICKET</div></div>
+    <div class="card-in">
+      <h2>留下你的名字</h2>
+      <p style="font-size:15px;color:var(--ink-soft)">只要一個暱稱就好。12/18 抽籤，抽到的人絲會再私下跟你要地址。</p>
+      <div id="grp-pick" style="display:none">
+        <label>你是哪一群的朋友？</label>
+        <div style="display:flex;gap:8px;margin-bottom:6px">
+          <button class="btn quiet" style="margin:0;flex:1" onclick="setGroup('ld',this)">卿卿我我圈 💕</button>
+          <button class="btn quiet" style="margin:0;flex:1" onclick="setGroup('irl',this)">現實朋友 🏠</button>
+        </div>
+      </div>
+      <p class="hint" id="grp-tag" style="margin-bottom:4px"></p>
+      <label for="nick">暱稱（朋友認得出你的那個）</label>
+      <input id="nick" placeholder="例如：小雀" maxlength="20" autocomplete="off">
+      <p class="hint">同一個暱稱只能登記一次，之後也用這個暱稱回來看結果。</p>
+      <p class="err" id="err"></p>
+      <button class="btn" onclick="register()">蓋章，我加入 ✦</button>
+      <button class="btn quiet" onclick="go('lookup')">我登記過了，看結果</button>
+    </div>
+    <div class="knit pine"></div>
+  </div>
+</section>
+
+<!-- ========== 03b LOOKUP ========== -->
+<section class="view" id="v-lookup">
+  <div class="card">
+    <div class="knit"></div>
+    <div class="card-in">
+      <h2>找回你的票</h2>
+      <label for="nick2">當時登記的暱稱</label>
+      <input id="nick2" placeholder="輸入暱稱" maxlength="20" autocomplete="off">
+      <p class="err" id="err2"></p>
+      <button class="btn" onclick="lookup()">看我的狀態</button>
+      <button class="btn quiet" onclick="go('register')">回上一頁</button>
+    </div>
+    <div class="knit pine"></div>
+  </div>
+</section>
+
+<!-- ========== 04 RESULT ========== -->
+<section class="view" id="v-result">
+  <div class="card">
+    <div class="knit"></div>
+    <div class="postmark" aria-hidden="true" style="top:18px;right:18px">BERGEN<b>REGISTERED</b>NORGE</div>
+    <div class="card-in">
+      <p class="hand" style="font-size:26px;color:var(--red)">You're in. 🎟</p>
+      <h2 id="r-name">Hello, XXX.</h2>
+
+      <div class="ticket">
+        <div class="k">TICKET NO.</div>
+        <div class="v" id="r-no">#000</div>
+        <div class="k">LOTTERY</div>
+        <div class="v hand" id="r-lot">Draws on Dec 18</div>
+        <div class="k">STATUS</div>
+        <div class="v" style="margin-bottom:0;font-size:18px" id="r-status">⏳ 等絲考完試</div>
+      </div>
+
+      <div class="win" id="win" style="display:none">
+        <div class="k">YOU GOT A POSTCARD 📮</div>
+        <div class="id" id="w-id">EUROPE-00</div>
+        <div class="st" id="w-st">—</div>
+        <div id="w-reveal-form" style="display:none">
+          <label for="code">明信片上的解鎖碼</label>
+          <input id="code" placeholder="例如 FJORD-K3Q" maxlength="20" autocomplete="off" autocapitalize="characters">
+          <p class="err" id="code-err"></p>
+          <button class="btn" style="margin-top:12px" onclick="reveal()">解鎖這張明信片 🔓</button>
+        </div>
+        <div class="reveal" id="w-reveal" style="display:none">
+          <div class="k" style="color:#B9C3D9">YOU FOUND YOUR POSTCARD</div>
+          <div class="city" id="rv-city">—</div>
+          <div class="muted" style="color:#B9C3D9" id="rv-date">—</div>
+          <div class="m" id="rv-msg"></div>
+        </div>
+      </div>
+
+      <div class="bless">
+        <span class="star">✦</span>
+        <div class="k">A NORDIC WORD FOR YOU</div>
+        <div class="w" id="r-word">—</div>
+        <div class="o" id="r-origin">—</div>
+        <div class="m" id="r-meaning">—</div>
+        <div class="t" id="r-bless">—</div>
+        <div class="sig">— 絲，從 Bergen 的某個角落</div>
+      </div>
+      <button class="btn" style="margin-top:14px" id="dl-btn" onclick="downloadCard()">存下這張卡 ⬇</button>
+      <p class="err" id="dl-msg" style="text-align:center"></p>
+
+      <p class="title-chip">你在這趟旅程的身分是 <b id="r-title">—</b><br><span style="color:var(--ink-soft);font-size:14px" id="r-title-desc"></span></p>
+
+      <p class="foot">這個字只屬於你，每個人拿到的都不一樣。<br><span id="foot-line">12/18 晚上回來看，你就知道有沒有抽到實體明信片了。</span><br><span class="hand">Vi ses! <span class="fl fl-no"></span></span></p>
+      <button class="btn quiet" onclick="go('landing')">回首頁</button>
+    </div>
+    <div class="knit pine"></div>
+  </div>
+</section>
+
+</main>
+
+<script src="firebase-config.js"></script>
+<script src="seed.js"></script>
+<script>
+/* ---------- 讀 Firestore 的小語 / 稱號（讀不到就用 seed.js） ---------- */
+let BL=BLESSINGS, TI=TITLES, PUB={drawDone:false};
+async function loadStatic(){
+  try{
+    const [b,t,c]=await Promise.all([
+      db.collection("blessings").orderBy("idx").get(),
+      db.collection("titles").orderBy("idx").get(),
+      db.collection("config").doc("public").get()
+    ]);
+    if(!b.empty) BL=b.docs.map(d=>{const x=d.data();return [x.word,x.lang,x.meaning,x.wish];});
+    if(!t.empty) TI=t.docs.map(d=>{const x=d.data();return [x.name,x.desc];});
+    if(c.exists) PUB=c.data();
+  }catch(e){ console.warn("static fallback",e); }
+}
+const ready=loadStatic();
+
+/* ---------- 兩群人：ld = 卿卿我我圈（抽 10），irl = 現實朋友（抽 5） ---------- */
+const GROUPS={ld:{label:"卿卿我我圈 💕",n:10},irl:{label:"現實朋友 🏠",n:5}};
+let GROUP=new URLSearchParams(location.search).get("g");
+if(!GROUPS[GROUP]) GROUP=null;
+function setGroup(g,btn){ GROUP=g; document.querySelectorAll("#grp-pick .btn").forEach(b=>b.style.background="transparent"); btn.style.background="var(--paper-2)"; paintGroup(); }
+function paintGroup(){
+  document.getElementById("grp-pick").style.display=GROUP?"none":"block";
+  document.getElementById("grp-tag").textContent=GROUP?("這是「"+GROUPS[GROUP].label+"」的連結，會抽 "+GROUPS[GROUP].n+" 張。"):"";
+}
+document.addEventListener("DOMContentLoaded",paintGroup);
+function drawnFor(g){ return g==="ld"?!!PUB.drawnLd:!!PUB.drawnIrl; }
+
+function go(id){
+  document.querySelectorAll(".view").forEach(v=>v.classList.remove("on"));
+  document.getElementById("v-"+id).classList.add("on");
+  window.scrollTo({top:0,behavior:"instant"});
+}
+function busy(btn,on){ btn.disabled=on; btn.style.opacity=on?.6:1; }
+
+/* ---------- 登記：交易保證不重名、小語不重複 ---------- */
+async function register(){
+  const name=document.getElementById("nick").value.trim();
+  const err=document.getElementById("err"); const btn=document.querySelector("#v-register .btn");
+  if(!name){ err.textContent="先寫個暱稱吧。"; return; }
+  if(name.length>20){ err.textContent="暱稱太長了，20 字以內。"; return; }
+  if(/[\/.#$\[\]]/.test(name)){ err.textContent="暱稱不能有 / . # $ [ ] 這些符號。"; return; }
+  if(!GROUP){ err.textContent="先選一下你是哪一群的。"; return; }
+  busy(btn,true); err.textContent="蓋章中…";
+  try{
+    await ready;
+    if(PUB.closed){ err.textContent="登記已經截止了，抽籤結果可以用「看結果」查。"; busy(btn,false); return; }
+    const p = await db.runTransaction(async tx=>{
+      const pRef=db.collection("participants").doc(name);
+      const cRef=db.collection("config").doc("counter");
+      const [pS,cS]=await Promise.all([tx.get(pRef),tx.get(cRef)]);
+      if(pS.exists) throw new Error("EXISTS");
+      if(!cS.exists) throw new Error("NOT_READY");
+      const c=cS.data(); const no=(c.count||0)+1;
+      const order=c.order||[]; const blessIdx = order.length? order[(no-1)%order.length] : Math.floor(Math.random()*BL.length);
+      const doc={name,group:GROUP,no,blessIdx,titleIdx:Math.floor(Math.random()*TI.length),createdAt:firebase.firestore.FieldValue.serverTimestamp()};
+      tx.update(cRef,{count:no});
+      tx.set(pRef,doc);
+      return doc;
+    });
+    try{ localStorage.setItem("epl-nick",name); }catch(e){}
+    await show(p);
+  }catch(e){
+    console.error(e);
+    err.textContent = e.message==="EXISTS" ? "這個暱稱已經登記過了，用「看結果」找回你的票。"
+      : e.message==="NOT_READY" ? "絲還沒把網站打開喔，等她一下。"
+      : "連線怪怪的，再試一次看看。";
+  }
+  busy(btn,false);
+}
+async function lookup(){
+  const name=document.getElementById("nick2").value.trim();
+  const err=document.getElementById("err2");
+  if(!name){ err.textContent="輸入暱稱。"; return; }
+  err.textContent="找票中…";
+  try{
+    await ready;
+    const s=await db.collection("participants").doc(name).get();
+    if(!s.exists){ err.textContent="找不到這個暱稱耶，要不要先登記？"; return; }
+    try{ localStorage.setItem("epl-nick",name); }catch(e){}
+    err.textContent=""; await show(s.data());
+  }catch(e){ err.textContent="連線怪怪的，再試一次看看。"; }
+}
+
+/* ---------- 結果頁 ---------- */
+let CURRENT=null;
+async function show(p){
+  CURRENT=p; document.getElementById("dl-msg").textContent="";
+  document.getElementById("r-name").textContent="Hello, "+p.name+"。";
+  document.getElementById("r-no").textContent="#"+String(p.no||0).padStart(3,"0");
+  const b=BL[p.blessIdx%BL.length], t=TI[p.titleIdx%TI.length];
+  document.getElementById("r-word").textContent=b[0];
+  document.getElementById("r-origin").textContent=b[1];
+  document.getElementById("r-meaning").textContent=b[2];
+  document.getElementById("r-bless").textContent=b[3];
+  document.getElementById("r-title").textContent=t[0];
+  document.getElementById("r-title-desc").textContent=t[1];
+
+  const win=document.getElementById("win"); win.style.display="none";
+  const lot=document.getElementById("r-lot"), st=document.getElementById("r-status"), foot=document.getElementById("foot-line");
+  if(!drawnFor(p.group)){
+    lot.textContent="Draws on Dec 18"; st.textContent="⏳ 等絲考完試";
+    foot.textContent="12/18 晚上回來看，你就知道有沒有抽到實體明信片了。";
+  }else if(p.postcardId){
+    lot.textContent="Drawn ✦"; st.textContent="📮 你抽到實體明信片了！";
+    foot.textContent="明信片會從歐洲某個城市出發，到的時候回來這裡輸入解鎖碼。";
+    await showPostcard(p.postcardId);
+  }else{
+    lot.textContent="Drawn ✦"; st.textContent="💌 這次沒抽到實體的，但有線上明信片";
+    foot.textContent="絲回台灣前會把線上明信片放上來，到時候再回來看。";
+  }
+  go("result");
+}
+async function showPostcard(id){
+  const win=document.getElementById("win"); win.style.display="block";
+  document.getElementById("w-id").textContent=id;
+  document.getElementById("w-reveal").style.display="none";
+  document.getElementById("w-reveal-form").style.display="none";
+  try{
+    const s=await db.collection("postcards").doc(id).get(); const c=s.exists?s.data():{};
+    const map={waiting:"🔒 WAITING：絲還沒寄出，她還在路上。",sent:"✈️ IN TRANSIT：已經從歐洲出發了，請怪國際郵件。",arrived:"📮 ARRIVED：已經到你手上了。"};
+    document.getElementById("w-st").textContent=map[c.status]||map.waiting;
+    if(c.status==="sent"||c.status==="arrived") document.getElementById("w-reveal-form").style.display="block";
+    win.dataset.hash=c.codeHash||"";
+    win.dataset.info=JSON.stringify({city:c.city||"",country:c.country||"",flag:c.flag||"",dateSent:c.dateSent||"",message:c.message||""});
+  }catch(e){ document.getElementById("w-st").textContent="狀態讀不到，等等再試。"; }
+}
+async function sha256(str){
+  const buf=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(str));
+  return [...new Uint8Array(buf)].map(b=>b.toString(16).padStart(2,"0")).join("");
+}
+async function reveal(){
+  const code=document.getElementById("code").value.trim().toUpperCase().replace(/\s+/g,"");
+  const err=document.getElementById("code-err"); const win=document.getElementById("win");
+  if(!code){ err.textContent="輸入明信片上的那組碼。"; return; }
+  const h=await sha256(code);
+  if(h!==win.dataset.hash){ err.textContent="不對喔，再看一次明信片背面。"; return; }
+  err.textContent="";
+  const i=JSON.parse(win.dataset.info||"{}");
+  document.getElementById("rv-city").textContent=(i.flag?i.flag+" ":"")+i.city+(i.country?", "+i.country:"");
+  document.getElementById("rv-date").textContent=i.dateSent?("Sent "+i.dateSent+" · "+i.city+" → Taiwan, just for you."):"";
+  document.getElementById("rv-msg").textContent=i.message||"";
+  document.getElementById("w-reveal-form").style.display="none";
+  document.getElementById("w-reveal").style.display="block";
+  try{ await db.collection("participants").doc(CURRENT.name).get(); }catch(e){}
+}
+
+/* ---------- 把小卡畫成圖片下載 ---------- */
+function wrap(ctx, text, maxW){
+  const lines=[]; let line="";
+  for(const ch of text){
+    const t=line+ch;
+    if(ctx.measureText(t).width>maxW && line){ lines.push(line); line=ch; } else line=t;
+  }
+  if(line) lines.push(line); return lines;
+}
+async function renderCard(p){
+  const b=BL[p.blessIdx%BL.length], t=TI[p.titleIdx%TI.length];
+  await Promise.all([
+    document.fonts.load('italic 600 150px Fraunces'),
+    document.fonts.load('400 40px "Noto Serif TC"'),
+    document.fonts.load('600 60px Caveat'),
+  ]).catch(()=>{});
+  const W=1080,H=1440, c=document.createElement("canvas"); c.width=W; c.height=H;
+  const x=c.getContext("2d");
+  x.fillStyle="#101A2E"; x.fillRect(0,0,W,H);
+  // grain
+  for(let i=0;i<9000;i++){ x.fillStyle=`rgba(242,232,213,${Math.random()*.06})`; x.fillRect(Math.random()*W,Math.random()*H,2,2); }
+  // knit bands
+  const knit=(y,col)=>{ for(let i=0;i<W;i+=28){ x.fillStyle=col; x.fillRect(i,y,14,24); x.fillStyle="#F2E8D5"; x.fillRect(i+14,y,14,24); x.beginPath(); x.arc(i+7,y+12,4,0,7); x.fill(); } };
+  knit(0,"#A9322B"); knit(H-24,"#2F5D4A");
+  const PAD=84;
+  // 先量內容總高度，再把整塊放到中間偏上
+  x.font='400 38px "Noto Serif TC"'; const mL=wrap(x,b[2],W-PAD*2);
+  x.font='600 64px Caveat, "Noto Serif TC"'; const wL=wrap(x,b[3],W-PAD*2);
+  const blockH = 150 + 60 + 70 + mL.length*62 + 20 + 90 + wL.length*90 + 10;
+  const top=110, bottom=H-300;
+  let y = top + Math.max(0,(bottom-top-blockH)/2) * 0.85;
+  x.fillStyle="#B9C3D9"; x.font="600 24px Fraunces"; x.letterSpacing="5px"; x.fillText("A NORDIC WORD FOR YOU",PAD,y); x.letterSpacing="0px";
+  x.fillStyle="#C49A3F"; x.font="40px serif"; x.fillText("✦",W-PAD-40,y+6);
+  y+=150; x.fillStyle="#F2E8D5"; x.font="italic 600 150px Fraunces";
+  let wf=150; while(x.measureText(b[0]).width>W-PAD*2){ wf-=8; x.font=`italic 600 ${wf}px Fraunces`; }
+  x.fillText(b[0],PAD,y);
+  y+=60; x.fillStyle="#B9C3D9"; x.font='400 30px "Noto Serif TC"'; x.letterSpacing="6px"; x.fillText(b[1],PAD,y); x.letterSpacing="0px";
+  y+=70; x.fillStyle="#E6DCC8"; x.font='400 38px "Noto Serif TC"';
+  for(const l of mL){ x.fillText(l,PAD,y); y+=62; }
+  y+=20; x.strokeStyle="rgba(242,232,213,.3)"; x.lineWidth=2; x.beginPath(); x.moveTo(PAD,y); x.lineTo(W-PAD,y); x.stroke();
+  y+=90; x.fillStyle="#F2E8D5"; x.font='600 64px Caveat, "Noto Serif TC"';
+  for(const l of wL){ x.fillText(l,PAD,y); y+=90; }
+  y+=10; x.fillStyle="#B9C3D9"; x.font='600 44px Caveat, "Noto Serif TC"'; x.textAlign="right"; x.fillText("— 絲，從 Bergen 的某個角落",W-PAD,y); x.textAlign="left";
+  // bottom block
+  const by=H-250;
+  x.fillStyle="#F2E8D5"; x.font='400 32px "Noto Serif TC"'; x.fillText("給 "+p.name,PAD,by);
+  x.fillStyle="#7FB09A"; x.font="600 34px Fraunces"; x.fillText(t[0],PAD,by+56);
+  x.fillStyle="#B9C3D9"; x.font='400 26px "Noto Serif TC"'; x.fillText(t[1],PAD,by+100);
+  x.fillStyle="#8A96B3"; x.font="500 22px Fraunces"; x.letterSpacing="4px"; x.textAlign="right";
+  x.fillText("EUROPEAN POSTCARD LOTTERY",W-PAD,by+56); x.fillText("WINTER 2026–2027 · NORWAY → EUROPE → TAIWAN",W-PAD,by+100); x.textAlign="left"; x.letterSpacing="0px";
+  return new Promise(r=>c.toBlob(r,"image/png"));
+}
+async function downloadCard(){
+  const msg=document.getElementById("dl-msg"), btn=document.getElementById("dl-btn");
+  if(!CURRENT) return; btn.disabled=true; msg.textContent="畫圖中…";
+  try{
+    const blob=await renderCard(CURRENT);
+    const fname=`nordic-word-${CURRENT.name}.png`;
+    let dl=null; try{ dl = window.claude ? await claude.use("downloads") : null; }catch(e){}
+    if(dl){ await dl.save({filename:fname,data:blob}); msg.textContent="存好了 ✦"; }
+    else{
+      const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=fname;
+      document.body.appendChild(a); a.click(); a.remove(); msg.textContent="存好了 ✦";
+    }
+  }catch(e){ msg.textContent = e && e.code==="declined" ? "沒關係，想存再回來。" : "存檔沒成功，再試一次看看。"; }
+  btn.disabled=false;
+}
+
+
+/* 回訪：有存暱稱就直接帶去結果頁 */
+(async function(){
+  let n=null; try{ n=localStorage.getItem("epl-nick"); }catch(e){}
+  if(n){ document.getElementById("nick2").value=n; }
+})();
+
+/* ---------- 雪 ---------- */
+(function(){
+  const c=document.getElementById("snow"); if(!c) return;
+  if(matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  const ctx=c.getContext("2d"); let W,H,flakes=[];
+  function size(){ W=c.width=innerWidth; H=c.height=innerHeight; }
+  addEventListener("resize",size); size();
+  for(let i=0;i<70;i++) flakes.push({x:Math.random()*W,y:Math.random()*H,r:1+Math.random()*2.2,s:.3+Math.random()*.8,w:Math.random()*Math.PI*2});
+  (function draw(){
+    ctx.clearRect(0,0,W,H); ctx.fillStyle="rgba(242,232,213,.75)";
+    for(const f of flakes){
+      f.y+=f.s; f.w+=.01; f.x+=Math.sin(f.w)*.3;
+      if(f.y>H){f.y=-5;f.x=Math.random()*W;}
+      ctx.beginPath(); ctx.arc(f.x,f.y,f.r,0,Math.PI*2); ctx.fill();
+    }
+    requestAnimationFrame(draw);
+  })();
+})();
+</script>
+</body>
+</html>

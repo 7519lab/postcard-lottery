@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>絲的後台 · Postcard Lottery</title>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,600;1,400&family=Noto+Serif+TC:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{--paper:#F2E8D5;--ink:#1C2740;--soft:#4B5468;--red:#A9322B;--pine:#2F5D4A;--line:#CDBFA3;--night:#101A2E}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--night);color:var(--ink);font-family:"Noto Serif TC",serif;line-height:1.6}
+.wrap{max-width:720px;margin:0 auto;padding:20px 14px 60px}
+.card{background:var(--paper);border-radius:6px;padding:18px 16px;margin-bottom:14px}
+h1{font-family:"Fraunces",serif;font-size:24px;margin-bottom:6px}
+h2{font-family:"Fraunces",serif;font-size:18px;margin-bottom:10px}
+input,select,textarea{width:100%;padding:10px;font:15px "Noto Serif TC",serif;border:1.5px solid var(--line);border-radius:4px;background:#fff;color:var(--ink);margin:4px 0 10px}
+textarea{min-height:60px}
+button{padding:10px 14px;border:0;border-radius:4px;background:var(--red);color:var(--paper);font:600 15px "Noto Serif TC",serif;cursor:pointer}
+button.q{background:transparent;border:1.5px solid var(--ink);color:var(--ink)}
+button.p{background:var(--pine)}
+button:disabled{opacity:.5}
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+.tabs button{background:transparent;border:1.5px solid var(--paper);color:var(--paper)}
+.tabs button.on{background:var(--paper);color:var(--ink)}
+.view{display:none}.view.on{display:block}
+table{width:100%;border-collapse:collapse;font-size:14px}
+td,th{padding:6px 4px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+.tag{display:inline-block;padding:1px 8px;border-radius:10px;font-size:12px;background:#E9DCC4}
+.tag.sent{background:#D7E4DC;color:var(--pine)}.tag.arrived{background:#F1D5D2;color:var(--red)}
+.msg{font-size:14px;color:var(--soft);min-height:1.4em;margin-top:6px}
+.row{display:flex;gap:8px;align-items:center}
+.pc{border:1px solid var(--line);border-radius:4px;padding:10px;margin-bottom:10px;background:#F7EEE0}
+.pc b{font-family:"Fraunces",serif}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:0 10px}
+small{color:var(--soft)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<div class="card" id="login">
+  <h1>絲的後台</h1>
+  <small>只有你能進來。</small>
+  <input id="email" type="email" placeholder="email" autocomplete="username">
+  <input id="pw" type="password" placeholder="密碼" autocomplete="current-password">
+  <button onclick="login()">登入</button>
+  <p class="msg" id="login-msg"></p>
+</div>
+
+<div id="app" style="display:none">
+  <div class="row" style="justify-content:space-between;margin-bottom:12px;color:var(--paper)">
+    <span style="font-family:Fraunces,serif">European Postcard Lottery · Admin</span>
+    <button class="q" style="border-color:var(--paper);color:var(--paper)" onclick="firebase.auth().signOut()">登出</button>
+  </div>
+  <div class="tabs">
+    <button class="on" onclick="tab('setup',this)">設定</button>
+    <button onclick="tab('people',this)">參加者</button>
+    <button onclick="tab('draw',this)">抽籤</button>
+    <button onclick="tab('cards',this)">明信片</button>
+    <button onclick="tab('words',this)">小語</button>
+  </div>
+
+  <!-- 設定 -->
+  <div class="view on" id="t-setup">
+    <div class="card">
+      <h2>第一次用：匯入種子資料</h2>
+      <small>會建立 60 句小語、20 個稱號、15 張明信片的空殼、計數器。已經有的不會蓋掉。</small><br><br>
+      <button onclick="seed()">匯入</button>
+      <p class="msg" id="seed-msg"></p>
+    </div>
+    <div class="card">
+      <h2>網站狀態</h2>
+      <label><input type="checkbox" id="cfg-closed" style="width:auto"> 關閉登記（12/18 抽籤前關）</label><br>
+      <label><input type="checkbox" id="cfg-drawnLd" style="width:auto"> 卿卿我我圈已抽完（勾了那群才看得到結果）</label><br>
+      <label><input type="checkbox" id="cfg-drawnIrl" style="width:auto"> 現實朋友已抽完</label><br><br>
+      <button onclick="saveCfg()">儲存</button>
+      <p class="msg" id="cfg-msg"></p>
+    </div>
+  </div>
+
+  <!-- 參加者 -->
+  <div class="view" id="t-people">
+    <div class="card">
+      <div class="row" style="justify-content:space-between"><h2 id="people-h">參加者</h2><button class="q" onclick="loadPeople()">重新整理</button></div>
+      <table id="people"></table>
+    </div>
+  </div>
+
+  <!-- 抽籤 -->
+  <div class="view" id="t-draw">
+    <div class="card">
+      <h2>抽籤</h2>
+      <small>卿卿我我圈抽 10 位，拿 EUROPE-01～10；現實朋友抽 5 位，拿 EUROPE-11～15。各自抽、各自公布。抽過就不能再抽，除非先清除。</small><br><br>
+      <div class="row" style="flex-wrap:wrap"><button onclick="draw('ld')">抽卿卿我我圈 💕</button><button onclick="draw('irl')">抽現實朋友 🏠</button></div>
+      <div class="row" style="margin-top:8px;flex-wrap:wrap"><button class="q" onclick="clearDraw('ld')">清除 💕</button><button class="q" onclick="clearDraw('irl')">清除 🏠</button></div>
+      <p class="msg" id="draw-msg"></p>
+      <table id="draw-result"></table>
+    </div>
+  </div>
+
+  <!-- 明信片 -->
+  <div class="view" id="t-cards">
+    <div class="card">
+      <h2>15 張明信片</h2>
+      <small>到一個城市、寄出一張，就來這裡填城市跟解鎖碼，狀態改成「已寄出」。解鎖碼寫在明信片背面，朋友輸入才會看到城市。</small>
+      <div id="cards" style="margin-top:12px"></div>
+    </div>
+  </div>
+
+  <!-- 小語 -->
+  <div class="view" id="t-words">
+    <div class="card">
+      <h2>60 句小語</h2>
+      <small>改完各自按儲存。已經發出去的句子改了，朋友那邊也會跟著變。</small>
+      <div id="words" style="margin-top:12px"></div>
+    </div>
+    <div class="card">
+      <h2>20 個稱號</h2>
+      <div id="titles"></div>
+    </div>
+  </div>
+</div>
+</div>
+
+<script src="firebase-config.js"></script>
+<script src="seed.js"></script>
+<script>
+const $=id=>document.getElementById(id);
+const FLAGS={"Norway":"🇳🇴","Denmark":"🇩🇰","Sweden":"🇸🇪","Finland":"🇫🇮","Iceland":"🇮🇸","Estonia":"🇪🇪","Germany":"🇩🇪","France":"🇫🇷","Italy":"🇮🇹","Spain":"🇪🇸","Portugal":"🇵🇹","Netherlands":"🇳🇱","Belgium":"🇧🇪","Czech Republic":"🇨🇿","Austria":"🇦🇹","Switzerland":"🇨🇭","Poland":"🇵🇱","Hungary":"🇭🇺","UK":"🇬🇧","Ireland":"🇮🇪","Greece":"🇬🇷","Croatia":"🇭🇷"};
+
+/* ---------- auth ---------- */
+async function login(){
+  $("login-msg").textContent="登入中…";
+  try{ await firebase.auth().signInWithEmailAndPassword($("email").value.trim(),$("pw").value); }
+  catch(e){ $("login-msg").textContent="登不進去："+e.code; }
+}
+firebase.auth().onAuthStateChanged(u=>{
+  $("login").style.display=u?"none":"block"; $("app").style.display=u?"block":"none";
+  if(u){ loadCfg(); loadPeople(); loadCards(); loadWords(); }
+});
+function tab(id,btn){
+  document.querySelectorAll(".view").forEach(v=>v.classList.remove("on")); $("t-"+id).classList.add("on");
+  document.querySelectorAll(".tabs button").forEach(b=>b.classList.remove("on")); btn.classList.add("on");
+}
+
+/* ---------- seed ---------- */
+function shuffle(a){ for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a; }
+async function seed(){
+  $("seed-msg").textContent="匯入中…";
+  try{
+    let b=db.batch(), n=0;
+    const flush=async()=>{ if(n){ await b.commit(); b=db.batch(); n=0; } };
+    const add=(ref,data)=>{ b.set(ref,data,{merge:true}); if(++n>=400) return flush(); };
+    for(const [i,x] of BLESSINGS.entries()) await add(db.collection("blessings").doc(String(i).padStart(2,"0")),{idx:i,word:x[0],lang:x[1],meaning:x[2],wish:x[3]});
+    for(const [i,x] of TITLES.entries()) await add(db.collection("titles").doc(String(i).padStart(2,"0")),{idx:i,name:x[0],desc:x[1]});
+    for(let i=1;i<=15;i++){ const id="EUROPE-"+String(i).padStart(2,"0"); await add(db.collection("postcards").doc(id),{id,status:"waiting"}); }
+    await flush();
+    const c=await db.collection("config").doc("counter").get();
+    if(!c.exists) await db.collection("config").doc("counter").set({count:0,order:shuffle([...Array(BLESSINGS.length).keys()])});
+    const p=await db.collection("config").doc("public").get();
+    if(!p.exists) await db.collection("config").doc("public").set({drawnLd:false,drawnIrl:false,closed:false,deadline:"2026-12-18"});
+    $("seed-msg").textContent="好了 ✦"; loadCfg(); loadCards(); loadWords();
+  }catch(e){ $("seed-msg").textContent="失敗："+e.message; }
+}
+
+/* ---------- config ---------- */
+async function loadCfg(){
+  const p=await db.collection("config").doc("public").get(); const d=p.exists?p.data():{};
+  $("cfg-closed").checked=!!d.closed; $("cfg-drawnLd").checked=!!d.drawnLd; $("cfg-drawnIrl").checked=!!d.drawnIrl;
+}
+async function saveCfg(){
+  await db.collection("config").doc("public").set({closed:$("cfg-closed").checked,drawnLd:$("cfg-drawnLd").checked,drawnIrl:$("cfg-drawnIrl").checked},{merge:true});
+  $("cfg-msg").textContent="存好了 ✦";
+}
+
+/* ---------- people ---------- */
+let PEOPLE=[];
+async function loadPeople(){
+  const s=await db.collection("participants").orderBy("no").get();
+  PEOPLE=s.docs.map(d=>d.data());
+  $("people-h").textContent="參加者（💕 "+PEOPLE.filter(p=>p.group==="ld").length+" · 🏠 "+PEOPLE.filter(p=>p.group==="irl").length+"）";
+  $("people").innerHTML="<tr><th>#</th><th>暱稱</th><th>群</th><th>小語</th><th>稱號</th><th>明信片</th><th></th></tr>"+
+    PEOPLE.map(p=>`<tr><td>${p.no}</td><td>${esc(p.name)}</td><td>${p.group==="ld"?"💕":"🏠"}</td><td><small>${esc((BLESSINGS[p.blessIdx]||[])[0]||"")}</small></td><td><small>${esc((TITLES[p.titleIdx]||[])[0]||"")}</small></td><td>${p.postcardId?'<span class="tag">'+p.postcardId+'</span>':''}</td><td><button class="q" style="padding:2px 8px;font-size:12px" onclick="delPerson('${esc(p.name)}')">刪</button></td></tr>`).join("");
+}
+async function delPerson(n){ if(!confirm("刪掉 "+n+"？")) return; await db.collection("participants").doc(n).delete(); loadPeople(); }
+function esc(s){ return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+
+/* ---------- draw ---------- */
+const G={ld:{n:10,from:1,flag:"drawnLd",label:"卿卿我我圈"},irl:{n:5,from:11,flag:"drawnIrl",label:"現實朋友"}};
+async function draw(g){
+  const cfg=G[g]; await loadPeople();
+  const pool=PEOPLE.filter(p=>p.group===g);
+  if(pool.some(p=>p.postcardId)){ $("draw-msg").textContent=cfg.label+"已經抽過了，要重抽先清除。"; return; }
+  if(pool.length<cfg.n){ $("draw-msg").textContent=cfg.label+"不到 "+cfg.n+" 人（目前 "+pool.length+"）。"; return; }
+  if(!confirm("確定要抽"+cfg.label+"了嗎？抽完那群朋友就看得到結果。")) return;
+  const win=shuffle([...pool]).slice(0,cfg.n);
+  const b=db.batch();
+  win.forEach((p,i)=>{
+    const id="EUROPE-"+String(cfg.from+i).padStart(2,"0");
+    b.update(db.collection("participants").doc(p.name),{postcardId:id});
+    b.set(db.collection("private").doc("draw"),{[id]:p.name},{merge:true});
+  });
+  b.set(db.collection("config").doc("public"),{[cfg.flag]:true},{merge:true});
+  await b.commit();
+  $("draw-msg").textContent=cfg.label+"抽好了 🎟"; loadCfg(); showDraw(); loadPeople(); loadCards();
+}
+async function showDraw(){
+  const s=await db.collection("private").doc("draw").get(); const d=s.exists?s.data():{};
+  $("draw-result").innerHTML=Object.keys(d).sort().map(k=>`<tr><td><b>${k}</b></td><td>${esc(d[k])}</td></tr>`).join("");
+}
+async function clearDraw(g){
+  const cfg=G[g]; if(!confirm("清除"+cfg.label+"的抽籤結果？")) return;
+  await loadPeople(); const b=db.batch(); const upd={};
+  PEOPLE.filter(p=>p.group===g&&p.postcardId).forEach(p=>{ upd[p.postcardId]=firebase.firestore.FieldValue.delete(); b.update(db.collection("participants").doc(p.name),{postcardId:firebase.firestore.FieldValue.delete()}); });
+  b.set(db.collection("private").doc("draw"),upd,{merge:true});
+  b.set(db.collection("config").doc("public"),{[cfg.flag]:false},{merge:true});
+  await b.commit(); $("draw-msg").textContent="清掉了。"; showDraw(); loadCfg(); loadPeople();
+}
+
+/* ---------- postcards ---------- */
+async function sha256(str){ const buf=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(str)); return [...new Uint8Array(buf)].map(b=>b.toString(16).padStart(2,"0")).join(""); }
+function genCode(){ const A="ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; const w=["FJORD","NISSE","SNOW","JUL","LYS","BERGEN","NORD","TROLL","KOS","HEI"]; return w[Math.floor(Math.random()*w.length)]+"-"+[...Array(3)].map(()=>A[Math.floor(Math.random()*A.length)]).join(""); }
+async function loadCards(){
+  const [s,d,codes]=await Promise.all([db.collection("postcards").orderBy("id").get(),db.collection("private").doc("draw").get(),db.collection("private").doc("codes").get()]);
+  const who=d.exists?d.data():{}, cd=codes.exists?codes.data():{};
+  $("cards").innerHTML=s.docs.map(x=>{const c=x.data(); const id=c.id; return `
+  <div class="pc" id="pc-${id}">
+    <div class="row" style="justify-content:space-between"><b>${id}</b> <span>→ ${esc(who[id]||"（還沒抽）")}</span> <span class="tag ${c.status}">${c.status}</span></div>
+    <div class="grid">
+      <div><small>城市</small><input id="${id}-city" value="${esc(c.city||"")}" placeholder="Prague"></div>
+      <div><small>國家</small><input id="${id}-country" value="${esc(c.country||"")}" placeholder="Czech Republic"></div>
+      <div><small>寄出日期</small><input id="${id}-date" type="date" value="${esc(c.dateSent||"")}"></div>
+      <div><small>狀態</small><select id="${id}-status"><option value="waiting" ${c.status==="waiting"?"selected":""}>waiting 還沒寄</option><option value="sent" ${c.status==="sent"?"selected":""}>sent 已寄出</option><option value="arrived" ${c.status==="arrived"?"selected":""}>arrived 已收到</option></select></div>
+    </div>
+    <small>解鎖碼（寫在明信片背面）</small>
+    <div class="row"><input id="${id}-code" value="${esc(cd[id]||"")}" placeholder="按右邊產生" style="margin:0"><button class="q" onclick="$('${id}-code').value=genCode()">產生</button></div>
+    <small>給她的一句話（解鎖後顯示）</small><textarea id="${id}-msg">${esc(c.message||"")}</textarea>
+    <div class="row"><button class="p" onclick="saveCard('${id}')">儲存</button><span class="msg" id="${id}-m"></span></div>
+  </div>`;}).join("");
+}
+async function saveCard(id){
+  const v=k=>$(id+"-"+k).value.trim();
+  const code=v("code").toUpperCase().replace(/\s+/g,""), country=v("country");
+  const data={id,city:v("city"),country,flag:FLAGS[country]||"",dateSent:v("date"),status:v("status"),message:v("msg")};
+  if(code) data.codeHash=await sha256(code);
+  await db.collection("postcards").doc(id).set(data,{merge:true});
+  if(code) await db.collection("private").doc("codes").set({[id]:code},{merge:true});
+  $(id+"-m").textContent="存好了 ✦"; setTimeout(loadCards,600);
+}
+
+/* ---------- words ---------- */
+async function loadWords(){
+  const [b,t]=await Promise.all([db.collection("blessings").orderBy("idx").get(),db.collection("titles").orderBy("idx").get()]);
+  $("words").innerHTML=b.docs.map(d=>{const x=d.data(),id=d.id;return `<div class="pc"><div class="grid"><input id="b-${id}-word" value="${esc(x.word)}"><input id="b-${id}-lang" value="${esc(x.lang)}"></div><input id="b-${id}-meaning" value="${esc(x.meaning)}"><textarea id="b-${id}-wish">${esc(x.wish)}</textarea><div class="row"><button class="p" onclick="saveWord('${id}')">儲存</button><span class="msg" id="b-${id}-m"></span></div></div>`;}).join("");
+  $("titles").innerHTML=t.docs.map(d=>{const x=d.data(),id=d.id;return `<div class="pc"><div class="grid"><input id="t-${id}-name" value="${esc(x.name)}"><input id="t-${id}-desc" value="${esc(x.desc)}"></div><div class="row"><button class="p" onclick="saveTitle('${id}')">儲存</button><span class="msg" id="t-${id}-m"></span></div></div>`;}).join("");
+}
+async function saveWord(id){ const v=k=>$("b-"+id+"-"+k).value.trim(); await db.collection("blessings").doc(id).set({word:v("word"),lang:v("lang"),meaning:v("meaning"),wish:v("wish")},{merge:true}); $("b-"+id+"-m").textContent="✦"; }
+async function saveTitle(id){ const v=k=>$("t-"+id+"-"+k).value.trim(); await db.collection("titles").doc(id).set({name:v("name"),desc:v("desc")},{merge:true}); $("t-"+id+"-m").textContent="✦"; }
+</script>
+</body>
+</html>
